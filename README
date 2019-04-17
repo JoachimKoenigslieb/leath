@@ -1,0 +1,30 @@
+leath.cc produces a binary trough the makefile called leath. This should be run with ./leath n p s or ./leath n p s -full. which will produce burst sizes for n bursts with treshhold p, and if -full also print out all the bonds in the cluster. 
+
+Ie:
+./leath 100 0.4 12 > burst.dat
+will give a burst.dat with the first line the number of clusters requested followed by a zero indiciating not full, and the one line of numbers spaced with \t characters. example:
+
+5 0.4 0
+3	10 	4	120	3
+
+./leath 100 0.4 12 -full > burst.dat 
+will give a burst.dat with the first line the number of clusters, and then a 1 indicating full. Then follows n lines of burst data, and the burst sizes in one line afterwards. Example:
+
+2 0.4 1
+(0, 0, 1), (0, 1, 0),
+(1, 1, 3),  
+2	1
+
+Note that -full quickly creates very large files. For 10000 bursts with p=0.49, we create files of the order of 10 MB 
+
+To run multiple simulations, ./simulate.sh k n produces k simulations with burst size n, and saves them to ./data/p{p}n{n}/run{i}p{p}n{n}.data. Simulate will simulate probabilites [.45, .455, .. 0.49]. 
+
+The first two numbers in a bond (x,y,index) indicate the position of the originating site, and the third is an index following the clock. Ie 0 is up, 1 is right, 2 is down 3 is left. 
+
+There is a read_data.py that can read the datafiles produced by the leath binary. 
+
+leath binary uses a hash map to save a cluster as we can then check loopless in constant time. Possible optimzations routes could include keeping tighter track of full sites. Right now we keep a vector of keys which we choose randomly from, and this vector contains all sites we have visited and will never get smaller after a site has become full. 
+
+For random seed we use ctime(0) which gives returns seconds since unix sometime in the seventies.. (unix epoch). This means if it runs too fast it will return identical results. To combat this, it will use ctime(0)*s for whatever seed factor is provided. 
+
+There is also provided a profiler.sh which depends on valgrind and kcachegrind. Both of these i could install using apt-get 
