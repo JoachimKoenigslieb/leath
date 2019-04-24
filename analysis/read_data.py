@@ -23,5 +23,5 @@ def read(filename, force_small = False):
     if force_small == False:    
         if full == 1:
             return burst_sizes, bursts
-    return burst_sizes
+    return burst_sizes, []
     
