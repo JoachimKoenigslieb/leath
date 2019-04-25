@@ -11,10 +11,6 @@ import os
 from scipy.optimize import curve_fit
 import numpy as np
 
-files = os.listdir('./data')
-
-survivor, tau, fracdim = [],[],[]
-
 def getp(filename):
     n_index = filename.index('n')
     return float(filename[1:n_index])
@@ -72,6 +68,9 @@ def sort_legend(ax):
     labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: int(t[0].split(' ')[0])))
     return handles, labels
 
+files = os.listdir('./data')
+
+survivor, tau, fracdim, gamma = [],[],[],[]
 for f in files:
     if 'tau' in f:
         tau.append(f)
@@ -79,20 +78,26 @@ for f in files:
         survivor.append(f)
     if 'fracdim' in f:
         fracdim.append(f)
+    if 'gamma' in f:
+        gamma.append(f)
 
 tau_dict=sort_n({},tau)
 surv_dict=sort_n({},survivor)
 fracdim_dict=sort_n({},fracdim)
+gamma_dict=sort_n({},gamma)
+
+plt.ioff()
 
 tau_fits = {}
 surv_fits = {}
 fracdim_fits = {}
+gamma_fits = {}
 
 plt.close('all')
 
 markers = ['o','s','x','^','d']
 
-save_fits = True
+save_fits = False
 
 for N in tau_dict:
     filenames = tau_dict[N]
@@ -125,27 +130,58 @@ for N in fracdim_dict:
         fracdim = [linfit(*[np.log(i) for i in read(f)],s, name=None)[0][0] for f in filenames] 
     fracdim_fits[N] = pairsort(P,fracdim)
 
+for N in gamma_dict:
+    f = gamma_dict[N][0]
+    P, mean_clusters = read(f)
+    P = np.log(abs(0.5-np.array(P)))
+    mean_clusters = np.log(mean_clusters)
+    if save_fits:
+        gamma = linfit(P, mean_clusters, slice(0,None), name=f+'.png')[0][0]
+    else:
+         gamma = linfit(P, mean_clusters, slice(0,None))[0][0]
+    gamma_fits[N] = gamma
 
 f_surv, a_surv = plt.subplots(1,1)
 for N,m in zip(surv_fits,markers):
+    P, surv = surv_fits[N]
     a_surv.plot(*surv_fits[N],'--k', marker=m, label='{n} bursts'.format(n=N))
-    a_surv.set_title('Survival fit')
-    a_surv.set_xlabel('p')
-    a_surv.set_ylabel('b')
+#    a_surv.loglog(abs(np.array(P)-0.5), surv, '--k', marker=m, label='{n} bursts'.format(n=N))
+#a_surv.set_title('Survival fit')
+a_surv.set_xlabel('p')
+a_surv.set_ylabel('b')
 a_surv.legend(*sort_legend(a_surv))
     
 f_tau, a_tau = plt.subplots(1,1)
 for N,m in zip(tau_fits,markers):
+    P, tau = tau_fits[N]
     a_tau.plot(*tau_fits[N],'--k', marker=m, label='{n} bursts'.format(n=N))
-    a_tau.set_title('Tau fit')
-    a_tau.set_xlabel('p')
-    a_tau.set_ylabel('tau')
+#    a_tau.loglog(abs(np.array(P)-0.5), tau, '--k', marker=m, label='{n} bursts'.format(n=N))
+#a_tau.set_title('Tau fit')
+a_tau.set_xlabel('p')
+a_tau.set_ylabel('tau')
 a_tau.legend(*sort_legend(a_tau))
 
 f_frac, a_frac = plt.subplots(1,1)
 for N,m in zip(fracdim_fits,markers): 
-    a_frac.plot(*fracdim_fits[N],'--k', marker=m, label='{n} bursts'.format(n=N))
-    a_frac.set_title('Fractal dimension fits')
-    a_frac.set_xlabel('p')
-    a_frac.set_ylabel('d')
+    if N>100:
+        P, d = fracdim_fits[N]
+        a_frac.plot(P,d, color='k',linestyle="None", marker=m, label='{n} bursts'.format(n=N))
+        fracdim_extrap_fit = linfit(P,d,slice(0,None))[0]
+        a_frac.plot(P, [lin(x, *fracdim_extrap_fit) for x in P],'k')
+        P_extrap = [P[-1],0.5]
+        a_frac.plot(P_extrap, [lin(x, *fracdim_extrap_fit) for x in P_extrap], 'k--')
+        
+#a_frac.set_title('Fractal dimension fits')
+a_frac.set_xlabel('p')
+a_frac.set_ylabel('d')
 a_frac.legend()
+
+f_gamma, a_gamma = plt.subplots(1,1)
+a_gamma.semilogx(*pairsort(list(gamma_fits.keys()), list(gamma_fits.values())),'ok--', label='Gamma for different values of N')
+#a_gamma.set_title('Gamma fits semilogx scale')
+a_gamma.set_xlabel('Number of bursts')
+a_gamma.set_ylabel('gamma')
+a_gamma.legend()
+
+
+plt.show()

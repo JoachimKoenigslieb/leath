@@ -14,7 +14,7 @@ do
 
 	for i in $(seq "$k")
 	do
-		./leath "$n" "$p" "$i" -full > ./data/p"$p"n"$n"/run"$i"p"$p"n"$n".data
+		./leath "$n" "$p" "$i" > ./data/p"$p"n"$n"/run"$i"p"$p"n"$n".data
 		echo -ne 'Completed '"$i"' out of '"$k"' runs with probability: '"$p"'\r'
 	done
 done
